@@ -705,3 +705,92 @@ body {
   margin: 0;
   max-width: 260px;
 }
+
+/* ── 헬스장 보유 머신 목록 화면: 스크롤 최하단 잠금 ────────────── */
+/* 목록을 끝까지 스크롤해서 다 확인한 시점에 전체 화면을 덮는 오버레이가
+   나타나 앱 다운로드를 유도한다. 목록 콘텐츠 자체는 계속 완전히 공개. */
+
+.list-scroll-sentinel {
+  height: 1px;
+  width: 100%;
+}
+
+.scroll-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.scroll-lock-overlay[hidden] {
+  display: none;
+}
+
+.scroll-lock-overlay--open {
+  opacity: 1;
+}
+
+.scroll-lock-card {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
+  padding: 28px 22px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+.scroll-lock-icon {
+  font-size: 28px;
+}
+
+.scroll-lock-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.scroll-lock-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.scroll-lock-cta-logo {
+  display: block;
+  height: 15px;
+  width: auto;
+}
+
+.scroll-lock-back {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-sub);
+  padding: 4px 8px;
+  cursor: pointer;
+}
