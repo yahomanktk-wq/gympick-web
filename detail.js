@@ -56,7 +56,9 @@ export function renderMachineDetailHtml(machine) {
       </div>
 
       <h1 class="detail-name">${machine.name}</h1>
-      <div class="detail-brand-row">
+      <div class="${logoUrl ? 'detail-brand-row detail-brand-row--clickable' : 'detail-brand-row'}"${
+        logoUrl ? ` data-brand="${machine.brand}"` : ''
+      }>
         ${logoUrl ? `<img class="detail-brand-logo" src="${logoUrl}" alt="" loading="lazy" />` : ''}
         <span class="detail-brand">${brandLabel(machine.brand)}</span>
       </div>

@@ -105,11 +105,12 @@ function handleRootClick(target) {
     return;
   }
 
-  // 제조사 로고(헬스장 헤더) / 머신 카드의 제조사 로고+텍스트 탭 → 제조사 잠금 화면
-  const brandTrigger = target.closest('.brand-logo-chip, .machine-brand-row');
-  if (brandTrigger) {
-    const brand = brandTrigger.dataset.brand;
-    if (brand) goToBrand(brand);
+  // 제조사 로고(헬스장 헤더) / 머신 카드·상세화면의 제조사 로고+텍스트 탭 → 제조사 잠금 화면
+  // 로고가 없는 브랜드(NONE/STANDARD)는 data-brand가 없으므로, 그 경우엔 여기서
+  // 끝내지 않고 아래로 흘려보내 카드 탭(상세보기 이동)이 정상 동작하게 한다.
+  const brandTrigger = target.closest('.brand-logo-chip, .machine-brand-row, .detail-brand-row');
+  if (brandTrigger?.dataset.brand) {
+    goToBrand(brandTrigger.dataset.brand);
     return;
   }
 
@@ -297,7 +298,12 @@ function renderGym(gym, machines) {
   // 머신 목록을 끝까지 스크롤해서 다 확인한 시점에 앱 다운로드 유도 오버레이 표시.
   // 목록 콘텐츠 자체는 항상 그대로 완전히 공개된 상태 — 이 오버레이는 콘텐츠를
   // 가리는 게 아니라, 페이지 끝에 도달했을 때 한 번 더 유도하는 용도.
+  // 머신 수가 적어 페이지가 한 화면에 다 들어오는 경우(스크롤 자체가 필요 없는
+  // 경우)에는 진입하자마자 곧바로 잠기는 걸 막기 위해 스크롤이 실제로 가능할
+  // 때만 관찰을 등록한다.
   const sentinel = root.querySelector('.list-scroll-sentinel');
+  const isScrollable = document.documentElement.scrollHeight > window.innerHeight + 40;
+  if (!isScrollable) return;
   stopListScrollWatch = watchScrollToEnd(sentinel, () => {
     showScrollLockOverlay(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });

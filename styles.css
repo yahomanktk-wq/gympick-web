@@ -542,6 +542,19 @@ body {
   margin: 0 0 16px;
 }
 
+.detail-brand-row--clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0 -4px 16px;
+  padding: 2px 4px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.detail-brand-row--clickable:active {
+  background: #f0f0f0;
+}
+
 .detail-brand-logo {
   width: 32px;
   height: 32px;
