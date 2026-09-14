@@ -6,6 +6,7 @@ import { gympickLogoSvg } from './logo.js';
 import { storeCtaHtml } from './store.js';
 import { openMachineAppModal } from './modal.js';
 import { renderMachineDetailHtml, LOCK_MESSAGES } from './detail.js';
+import { renderBrandLockedHtml } from './brandScreen.js';
 
 const root = document.getElementById('root');
 const storeCtaBar = document.getElementById('store-cta-bar');
@@ -13,22 +14,31 @@ const storeCtaBar = document.getElementById('store-cta-bar');
 // 하단 고정 앱스토어 연결 바 — 헬스장 조회 성공/실패와 무관하게 항상 표시
 if (storeCtaBar) storeCtaBar.innerHTML = storeCtaHtml();
 
-// 머신 카드 탭 → 상세보기 화면(#machine=<id> 해시 라우팅)으로 이동.
-// 상세보기 화면의 "이 머신 보유 헬스장" / "머신 리뷰" 섹션은 잠금 처리되어
-// 탭하면 앱 다운로드 유도 모달을 띄운다.
+// 화면 전환은 해시 라우팅으로 처리한다:
+//   (없음)        → 머신 목록
+//   #machine=<id> → 머신 상세보기 (기능 잠금 섹션 포함)
+//   #brand=<value>→ 제조사 머신 목록 잠금 화면 (전체 블러 처리)
 // 렌더링마다 다시 그려지는 #root에 이벤트 위임으로 한 번만 등록.
 let currentGym = null;
 let currentMachines = [];
 let currentMachineById = new Map();
 let currentDetailMachine = null;
 
-function getMachineIdFromHash() {
-  const match = window.location.hash.match(/machine=([^&]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+function getRouteFromHash() {
+  const hash = window.location.hash;
+  let match = hash.match(/^#machine=([^&]+)/);
+  if (match) return { view: 'machine', value: decodeURIComponent(match[1]) };
+  match = hash.match(/^#brand=([^&]+)/);
+  if (match) return { view: 'brand', value: decodeURIComponent(match[1]) };
+  return { view: 'list' };
 }
 
 function goToDetail(machineId) {
   window.location.hash = `machine=${encodeURIComponent(machineId)}`;
+}
+
+function goToBrand(brand) {
+  window.location.hash = `brand=${encodeURIComponent(brand)}`;
 }
 
 function goToList() {
@@ -50,6 +60,23 @@ function renderDetailView(machineId) {
   window.scrollTo(0, 0);
 }
 
+function renderBrandView(brand) {
+  currentDetailMachine = null;
+  renderState(renderBrandLockedHtml(brand));
+  window.scrollTo(0, 0);
+}
+
+function renderRoute() {
+  const route = getRouteFromHash();
+  if (route.view === 'machine') {
+    renderDetailView(route.value);
+  } else if (route.view === 'brand') {
+    renderBrandView(route.value);
+  } else {
+    goToList();
+  }
+}
+
 function handleRootClick(target) {
   const backBtn = target.closest('.detail-close');
   if (backBtn) {
@@ -65,6 +92,14 @@ function handleRootClick(target) {
     return;
   }
 
+  // 제조사 로고(헬스장 헤더) / 머신 카드의 제조사 로고+텍스트 탭 → 제조사 잠금 화면
+  const brandTrigger = target.closest('.brand-logo-chip, .machine-brand-row');
+  if (brandTrigger) {
+    const brand = brandTrigger.dataset.brand;
+    if (brand) goToBrand(brand);
+    return;
+  }
+
   const card = target.closest('.machine-card');
   if (card) {
     const machine = currentMachineById.get(card.dataset.machineId);
@@ -75,19 +110,12 @@ function handleRootClick(target) {
 root.addEventListener('click', (e) => handleRootClick(e.target));
 root.addEventListener('keydown', (e) => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
-  if (!e.target.closest('.machine-card')) return;
+  if (!e.target.closest('.machine-card, .brand-logo-chip')) return;
   e.preventDefault();
   handleRootClick(e.target);
 });
 
-window.addEventListener('hashchange', () => {
-  const machineId = getMachineIdFromHash();
-  if (machineId) {
-    renderDetailView(machineId);
-  } else {
-    goToList();
-  }
-});
+window.addEventListener('hashchange', renderRoute);
 
 function getGymIdFromPath() {
   // 기대 경로: /gym/:gymId
@@ -131,6 +159,10 @@ function machineCardHtml(machine) {
   const badges = muscles.map((m) => `<span class="badge">${m}</span>`).join('');
   const img = machineImageUrl(machine.id);
   const logoUrl = brandLogoUrl(machine.brand);
+  // 로고가 있는(=실제 제조사가 확인된) 머신만 브랜드 행을 탭해 잠금 화면으로
+  // 이동시킨다 — NONE/STANDARD(노브랜드)는 이동 대상에서 제외.
+  const brandRowClass = logoUrl ? 'machine-brand-row machine-brand-row--clickable' : 'machine-brand-row';
+  const brandRowAttr = logoUrl ? ` data-brand="${machine.brand}"` : '';
 
   return `
     <li class="machine-card" data-machine-id="${machine.id}" role="button" tabindex="0">
@@ -144,7 +176,7 @@ function machineCardHtml(machine) {
       </div>
       <div class="machine-info">
         <p class="machine-name">${machine.name}</p>
-        <div class="machine-brand-row">
+        <div class="${brandRowClass}"${brandRowAttr}>
           ${logoUrl ? `<img class="machine-brand-logo" src="${logoUrl}" alt="" loading="lazy" />` : ''}
           <p class="machine-brand">${brandLabel(machine.brand)}</p>
         </div>
@@ -154,22 +186,26 @@ function machineCardHtml(machine) {
   `;
 }
 
-/** 보유 머신들의 제조사 로고를 중복 없이 나열 (로고가 없는 브랜드/STANDARD는 제외) */
+/** 보유 머신들의 제조사 로고를 중복 없이 나열 (로고가 없는 브랜드/STANDARD는 제외).
+ *  각 로고를 탭하면 해당 제조사의 머신 목록 잠금 화면으로 이동한다. */
 function brandLogoRowHtml(machines) {
   const seen = new Set();
-  const urls = [];
+  const items = [];
   for (const m of machines) {
     const url = brandLogoUrl(m.brand);
     if (url && !seen.has(url)) {
       seen.add(url);
-      urls.push(url);
+      items.push({ url, brand: m.brand });
     }
   }
-  if (urls.length === 0) return '';
+  if (items.length === 0) return '';
   return `
     <div class="brand-logo-row">
-      ${urls
-        .map((url) => `<span class="brand-logo-chip"><img src="${url}" alt="" loading="lazy" /></span>`)
+      ${items
+        .map(
+          ({ url, brand }) =>
+            `<span class="brand-logo-chip" data-brand="${brand}" role="button" tabindex="0"><img src="${url}" alt="" loading="lazy" /></span>`
+        )
         .join('')}
     </div>
   `;
@@ -257,9 +293,10 @@ async function main() {
 
     renderGym(gym, machines);
 
-    // 새로고침/공유 링크로 상세보기 화면(#machine=<id>)에 바로 진입한 경우 대응
-    const initialMachineId = getMachineIdFromHash();
-    if (initialMachineId) renderDetailView(initialMachineId);
+    // 새로고침/공유 링크로 상세보기·잠금 화면에 바로 진입한 경우 대응
+    const route = getRouteFromHash();
+    if (route.view === 'machine') renderDetailView(route.value);
+    else if (route.view === 'brand') renderBrandView(route.value);
   } catch (e) {
     console.error(e);
     renderError();

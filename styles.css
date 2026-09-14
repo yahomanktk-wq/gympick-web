@@ -87,6 +87,8 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .brand-logo-chip img {
@@ -239,6 +241,19 @@ body {
   font-size: 12px;
   color: var(--ink-sub);
   margin: 0;
+}
+
+.machine-brand-row--clickable {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  margin: 0 -4px 6px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.machine-brand-row--clickable:active {
+  background: #f0f0f0;
 }
 
 .badge-row {
@@ -592,4 +607,83 @@ body {
   color: var(--ink-sub);
   line-height: 1.5;
   margin: 0;
+}
+
+/* ── 제조사(브랜드) 머신 목록 잠금 화면 ─────────────────── */
+/* 헤더의 브랜드 로고 칩, 머신 카드의 브랜드명을 탭하면 이동하는 화면.
+   전체 화면을 블러 처리하고 중앙에 잠금 안내를 띄운다. */
+
+.brand-screen {
+  position: relative;
+  padding-top: 46px;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-screen-body {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.brand-blur {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 4px;
+  filter: blur(10px);
+  opacity: 0.55;
+}
+
+.brand-blur-card {
+  display: block;
+  border-radius: 14px;
+  background: #ebebeb;
+  aspect-ratio: 3 / 4;
+}
+
+.brand-screen-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.brand-screen-logo-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.brand-screen-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.brand-screen-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 260px;
 }
