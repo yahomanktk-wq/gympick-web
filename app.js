@@ -1,8 +1,15 @@
 import { fetchGym, fetchGymMachineIds, fetchMachinesByIds } from './supabase.js';
 import { MUSCLE_ORDER, parseMuscles, primaryMuscle } from './muscles.js';
 import { SUPABASE_URL } from './config.js';
+import { brandLogoUrl } from './brandLogos.js';
+import { gympickLogoSvg } from './logo.js';
+import { storeCtaHtml } from './store.js';
 
 const root = document.getElementById('root');
+const storeCtaBar = document.getElementById('store-cta-bar');
+
+// 하단 고정 앱스토어 연결 바 — 헬스장 조회 성공/실패와 무관하게 항상 표시
+if (storeCtaBar) storeCtaBar.innerHTML = storeCtaHtml();
 
 function machineImageUrl(machineId) {
   return `${SUPABASE_URL}/storage/v1/render/image/public/machine-images/${machineId}.webp?width=160&height=160&quality=75`;
@@ -55,6 +62,7 @@ function machineCardHtml(machine) {
   const muscles = parseMuscles(machine.target_muscle);
   const badges = muscles.map((m) => `<span class="badge">${m}</span>`).join('');
   const img = machineImageUrl(machine.id);
+  const logoUrl = brandLogoUrl(machine.brand);
 
   return `
     <li class="machine-card">
@@ -68,20 +76,44 @@ function machineCardHtml(machine) {
       </div>
       <div class="machine-info">
         <p class="machine-name">${machine.name}</p>
-        <p class="machine-brand">${brandLabel(machine.brand)}</p>
+        <div class="machine-brand-row">
+          ${logoUrl ? `<img class="machine-brand-logo" src="${logoUrl}" alt="" loading="lazy" />` : ''}
+          <p class="machine-brand">${brandLabel(machine.brand)}</p>
+        </div>
         <div class="badge-row">${badges}</div>
       </div>
     </li>
   `;
 }
 
+/** 보유 머신들의 제조사 로고를 중복 없이 나열 (로고가 없는 브랜드/STANDARD는 제외) */
+function brandLogoRowHtml(machines) {
+  const seen = new Set();
+  const urls = [];
+  for (const m of machines) {
+    const url = brandLogoUrl(m.brand);
+    if (url && !seen.has(url)) {
+      seen.add(url);
+      urls.push(url);
+    }
+  }
+  if (urls.length === 0) return '';
+  return `
+    <div class="brand-logo-row">
+      ${urls
+        .map((url) => `<span class="brand-logo-chip"><img src="${url}" alt="" loading="lazy" /></span>`)
+        .join('')}
+    </div>
+  `;
+}
+
 function renderGym(gym, machines) {
-  document.title = `${gym.name} 보유 머신 | GymPick`;
+  document.title = `${gym.name} 보유머신`;
 
   if (machines.length === 0) {
     renderState(`
       <header class="gym-header">
-        <p class="wordmark">GYMPICK</p>
+        ${gympickLogoSvg()}
         <h1>${gym.name}</h1>
         <p class="gym-location">${gym.location ?? ''}</p>
       </header>
@@ -116,10 +148,13 @@ function renderGym(gym, machines) {
 
   renderState(`
     <header class="gym-header">
-      <p class="wordmark">GYMPICK</p>
+      ${gympickLogoSvg()}
       <h1>${gym.name}</h1>
       <p class="gym-location">${gym.location ?? ''}</p>
-      <p class="gym-total">보유 머신 ${machines.length}대</p>
+      <div class="gym-total-row">
+        <p class="gym-total">보유 머신 ${machines.length}대</p>
+        ${brandLogoRowHtml(machines)}
+      </div>
     </header>
     ${sections}
     <footer class="page-footer">
