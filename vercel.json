@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/gym/:gymId", "destination": "/index.html" }
+  ]
+}
