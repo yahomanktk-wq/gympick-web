@@ -211,6 +211,16 @@ function brandLogoRowHtml(machines) {
   `;
 }
 
+/** 헤더 최상단: GYMPICK 로고와 안내 문구를 한 줄에 배치 */
+function brandLineHtml() {
+  return `
+    <div class="brand-line">
+      ${gympickLogoSvg()}
+      <span class="brand-line-text">에서 제공하는 헬스장 보유 머신 목록 입니다.</span>
+    </div>
+  `;
+}
+
 function renderGym(gym, machines) {
   document.title = `${gym.name} 보유머신`;
   currentGym = gym;
@@ -220,7 +230,7 @@ function renderGym(gym, machines) {
   if (machines.length === 0) {
     renderState(`
       <header class="gym-header">
-        ${gympickLogoSvg()}
+        ${brandLineHtml()}
         <h1>${gym.name}</h1>
         <p class="gym-location">${gym.location ?? ''}</p>
       </header>
@@ -255,7 +265,7 @@ function renderGym(gym, machines) {
 
   renderState(`
     <header class="gym-header">
-      ${gympickLogoSvg()}
+      ${brandLineHtml()}
       <h1>${gym.name}</h1>
       <p class="gym-location">${gym.location ?? ''}</p>
       <div class="gym-total-row">

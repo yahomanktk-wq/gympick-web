@@ -46,6 +46,24 @@ body {
   margin: 0 0 14px;
 }
 
+/* GYMPICK 로고 + 안내 문구를 한 줄에 배치 */
+.brand-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.brand-line .wordmark-logo {
+  margin: 0;
+}
+
+.brand-line-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-sub);
+}
+
 .gym-header h1 {
   font-size: 22px;
   font-weight: 700;
