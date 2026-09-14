@@ -69,3 +69,12 @@ export function brandLogoUrl(brand) {
   const file = BRAND_LOGO_FILES[key];
   return file ? `/assets/brand-logos/${file}` : null;
 }
+
+/**
+ * 화면에 표시할 브랜드명.
+ * 앱과 동일한 규칙: 노브랜드(매니저 직접등록) 카탈로그는 DB에 brand='NONE'으로
+ * 저장되지만 화면에는 'STANDARD'로 표시한다.
+ */
+export function brandLabel(brand) {
+  return brand === 'NONE' ? 'STANDARD' : brand;
+}

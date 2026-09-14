@@ -1,9 +1,11 @@
 import { fetchGym, fetchGymMachineIds, fetchMachinesByIds } from './supabase.js';
 import { MUSCLE_ORDER, parseMuscles, primaryMuscle } from './muscles.js';
-import { SUPABASE_URL } from './config.js';
-import { brandLogoUrl } from './brandLogos.js';
+import { machineImageUrl } from './images.js';
+import { brandLogoUrl, brandLabel } from './brandLogos.js';
 import { gympickLogoSvg } from './logo.js';
 import { storeCtaHtml } from './store.js';
+import { openMachineAppModal } from './modal.js';
+import { renderMachineDetailHtml, LOCK_MESSAGES } from './detail.js';
 
 const root = document.getElementById('root');
 const storeCtaBar = document.getElementById('store-cta-bar');
@@ -11,15 +13,81 @@ const storeCtaBar = document.getElementById('store-cta-bar');
 // 하단 고정 앱스토어 연결 바 — 헬스장 조회 성공/실패와 무관하게 항상 표시
 if (storeCtaBar) storeCtaBar.innerHTML = storeCtaHtml();
 
-function machineImageUrl(machineId) {
-  return `${SUPABASE_URL}/storage/v1/render/image/public/machine-images/${machineId}.webp?width=160&height=160&quality=75`;
+// 머신 카드 탭 → 상세보기 화면(#machine=<id> 해시 라우팅)으로 이동.
+// 상세보기 화면의 "이 머신 보유 헬스장" / "머신 리뷰" 섹션은 잠금 처리되어
+// 탭하면 앱 다운로드 유도 모달을 띄운다.
+// 렌더링마다 다시 그려지는 #root에 이벤트 위임으로 한 번만 등록.
+let currentGym = null;
+let currentMachines = [];
+let currentMachineById = new Map();
+let currentDetailMachine = null;
+
+function getMachineIdFromHash() {
+  const match = window.location.hash.match(/machine=([^&]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-function brandLabel(brand) {
-  // 앱과 동일한 규칙: 노브랜드(매니저 직접등록) 카탈로그는 DB에 brand='NONE'으로
-  // 저장되지만 화면에는 'STANDARD'로 표시한다.
-  return brand === 'NONE' ? 'STANDARD' : brand;
+function goToDetail(machineId) {
+  window.location.hash = `machine=${encodeURIComponent(machineId)}`;
 }
+
+function goToList() {
+  if (window.location.hash) {
+    history.pushState('', document.title, window.location.pathname + window.location.search);
+  }
+  currentDetailMachine = null;
+  if (currentGym) renderGym(currentGym, currentMachines);
+}
+
+function renderDetailView(machineId) {
+  const machine = currentMachineById.get(machineId);
+  if (!machine) {
+    goToList();
+    return;
+  }
+  currentDetailMachine = machine;
+  renderState(renderMachineDetailHtml(machine));
+  window.scrollTo(0, 0);
+}
+
+function handleRootClick(target) {
+  const backBtn = target.closest('.detail-close');
+  if (backBtn) {
+    goToList();
+    return;
+  }
+
+  const lockedSection = target.closest('.locked-section');
+  if (lockedSection) {
+    if (currentDetailMachine) {
+      openMachineAppModal(currentDetailMachine, LOCK_MESSAGES[lockedSection.dataset.lockType]);
+    }
+    return;
+  }
+
+  const card = target.closest('.machine-card');
+  if (card) {
+    const machine = currentMachineById.get(card.dataset.machineId);
+    if (machine) goToDetail(machine.id);
+  }
+}
+
+root.addEventListener('click', (e) => handleRootClick(e.target));
+root.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  if (!e.target.closest('.machine-card')) return;
+  e.preventDefault();
+  handleRootClick(e.target);
+});
+
+window.addEventListener('hashchange', () => {
+  const machineId = getMachineIdFromHash();
+  if (machineId) {
+    renderDetailView(machineId);
+  } else {
+    goToList();
+  }
+});
 
 function getGymIdFromPath() {
   // 기대 경로: /gym/:gymId
@@ -65,7 +133,7 @@ function machineCardHtml(machine) {
   const logoUrl = brandLogoUrl(machine.brand);
 
   return `
-    <li class="machine-card">
+    <li class="machine-card" data-machine-id="${machine.id}" role="button" tabindex="0">
       <div class="machine-thumb">
         <img
           src="${img}"
@@ -109,6 +177,9 @@ function brandLogoRowHtml(machines) {
 
 function renderGym(gym, machines) {
   document.title = `${gym.name} 보유머신`;
+  currentGym = gym;
+  currentMachines = machines;
+  currentMachineById = new Map(machines.map((m) => [String(m.id), m]));
 
   if (machines.length === 0) {
     renderState(`
@@ -185,6 +256,10 @@ async function main() {
     machines.sort((a, b) => a.name.localeCompare(b.name));
 
     renderGym(gym, machines);
+
+    // 새로고침/공유 링크로 상세보기 화면(#machine=<id>)에 바로 진입한 경우 대응
+    const initialMachineId = getMachineIdFromHash();
+    if (initialMachineId) renderDetailView(initialMachineId);
   } catch (e) {
     console.error(e);
     renderError();
