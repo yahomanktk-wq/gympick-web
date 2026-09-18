@@ -230,13 +230,13 @@ function brandLineHtml() {
   return `
     <div class="brand-line">
       ${gympickLogoSvg()}
-      <span class="brand-line-text">에서 제공하는 헬스장 보유 머신 목록 입니다.</span>
+      <span class="brand-line-text">에서 제공하는 보유 머신 목록입니다.</span>
     </div>
   `;
 }
 
 function renderGym(gym, machines) {
-  document.title = `${gym.name} 보유머신`;
+  document.title = `[${gym.name}] 보유머신 확인하기`;
   currentGym = gym;
   currentMachines = machines;
   currentMachineById = new Map(machines.map((m) => [String(m.id), m]));
@@ -287,6 +287,7 @@ function renderGym(gym, machines) {
         <p class="gym-total">보유 머신 ${machines.length}대</p>
         ${brandLogoRowHtml(machines)}
       </div>
+      <p class="gym-disclaimer">* 실시간 정보가 아니며, 현장의 실제 보유 머신 현황과 다를 수 있어요.</p>
     </header>
     ${sections}
     <footer class="page-footer">

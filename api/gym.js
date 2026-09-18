@@ -63,7 +63,7 @@ module.exports = async (req, res) => {
   const host = req.headers.host;
 
   const gymName = await fetchGymName(gymId);
-  const title = gymName ? `${gymName} 보유머신` : 'GymPick 보유머신';
+  const title = gymName ? `[${gymName}] 보유머신 확인하기` : '[GymPick] 보유머신 확인하기';
   const description = "'짐픽'을 통해 보유머신을 확인하세요.";
   const ogImage = `${proto}://${host}/og-image.png`;
   const pageUrl = `${proto}://${host}/gym/${encodeURIComponent(gymId)}`;
