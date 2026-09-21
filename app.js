@@ -97,6 +97,13 @@ function handleRootClick(target) {
     return;
   }
 
+  const filterBtn = target.closest('.muscle-filter-btn');
+  if (filterBtn) {
+    const targetSection = document.getElementById(filterBtn.dataset.target);
+    if (targetSection) targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
   const lockedSection = target.closest('.locked-section');
   if (lockedSection) {
     if (currentDetailMachine) {
@@ -225,6 +232,23 @@ function brandLogoRowHtml(machines) {
   `;
 }
 
+/** 부위별 보유 머신이 있는 부위만 버튼으로 나열 — 탭하면 해당 부위 섹션으로
+ *  스무스 스크롤 이동한다. 부위 개수가 많아 한 줄에 다 안 들어갈 수 있어
+ *  가로 스크롤 가능한 한 줄(nav)로 구성. */
+function muscleFilterRowHtml(keys) {
+  if (keys.length === 0) return '';
+  return `
+    <nav class="muscle-filter-row" aria-label="부위별 바로가기">
+      ${keys
+        .map(
+          (key) =>
+            `<button type="button" class="muscle-filter-btn" data-target="muscle-section-${key}">${key}</button>`
+        )
+        .join('')}
+    </nav>
+  `;
+}
+
 /** 헤더 최상단: GYMPICK 로고와 안내 문구를 한 줄에 배치 */
 function brandLineHtml() {
   return `
@@ -264,11 +288,13 @@ function renderGym(gym, machines) {
     grouped.get(key).push(m);
   }
 
-  const sections = MUSCLE_ORDER.filter((key) => grouped.has(key))
+  const availableKeys = MUSCLE_ORDER.filter((key) => grouped.has(key));
+
+  const sections = availableKeys
     .map((key) => {
       const items = grouped.get(key);
       return `
-        <section class="muscle-section">
+        <section class="muscle-section" id="muscle-section-${key}">
           <h2 class="muscle-title">${key}<span class="muscle-count">${items.length}</span></h2>
           <ul class="machine-list">
             ${items.map(machineCardHtml).join('')}
@@ -289,6 +315,7 @@ function renderGym(gym, machines) {
       </div>
       <p class="gym-disclaimer">* 실시간 정보가 아니며, 현장의 실제 보유 머신 현황과 다를 수 있어요.</p>
     </header>
+    ${muscleFilterRowHtml(availableKeys)}
     ${sections}
     <footer class="page-footer">
       <p>이 페이지는 GymPick 앱의 헬스장 보유 머신 정보를 보여줍니다.</p>

@@ -160,6 +160,43 @@ body {
   width: auto;
 }
 
+/* ── 부위별 바로가기 버튼 ───────────────────────────────── */
+/* 부위 섹션들 바로 위에 위치, 가로로 스크롤 가능한 한 줄의 알약형 버튼.
+   탭하면 app.js에서 해당 부위 섹션(#muscle-section-*)으로 스무스 스크롤. */
+
+.muscle-filter-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 0 22px;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.muscle-filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.muscle-filter-btn {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.muscle-filter-btn:active {
+  background: #f0f0f0;
+}
+
 /* ── 부위 섹션 ──────────────────────────────────────── */
 
 .muscle-section {
