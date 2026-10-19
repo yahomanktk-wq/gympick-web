@@ -166,6 +166,17 @@ function renderNotFound() {
   `);
 }
 
+/** 매니저가 연결되지 않은 헬스장 — 보유 머신 웹페이지는 매니저 연결
+ *  헬스장에서만 제공되는 기능이라, 목록을 불러오지 않고 여기서 막는다. */
+function renderNoManager() {
+  renderState(`
+    <div class="state">
+      <p class="state-title">아직 준비 중인 헬스장이에요</p>
+      <p class="state-sub">매니저가 연결되면 보유 머신 페이지를 이용할 수 있어요.</p>
+    </div>
+  `);
+}
+
 function renderError() {
   renderState(`
     <div class="state">
@@ -352,6 +363,10 @@ async function main() {
     const gym = await fetchGym(gymId);
     if (!gym) {
       renderNotFound();
+      return;
+    }
+    if (!gym.manager_id) {
+      renderNoManager();
       return;
     }
 
