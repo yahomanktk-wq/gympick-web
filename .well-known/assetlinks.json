@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.gympick.app",
+      "sha256_cert_fingerprints": [
+        "0F:91:F5:20:D1:03:60:0E:5A:DD:E7:A6:C4:F2:CB:B0:6B:70:B5:1B:89:85:08:96:25:AD:F9:C1:7C:19:22:12"
+      ]
+    }
+  }
+]

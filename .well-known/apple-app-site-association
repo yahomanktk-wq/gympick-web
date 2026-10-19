@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["24J8FC2FXB.com.gympick.app"],
+        "components": [
+          { "/": "/gym/*", "comment": "헬스장 상세 (머신 해시 포함)" }
+        ]
+      }
+    ]
+  }
+}
