@@ -8,6 +8,7 @@ import { openMachineAppModal } from './modal.js';
 import { renderMachineDetailHtml, LOCK_MESSAGES } from './detail.js';
 import { renderBrandLockedHtml } from './brandScreen.js';
 import { watchScrollToEnd, showScrollLockOverlay, hideScrollLockOverlay } from './scrollLock.js';
+import { mountOunwanSection } from './ounwan.js';
 
 const root = document.getElementById('root');
 const storeCtaBar = document.getElementById('store-cta-bar');
@@ -166,17 +167,6 @@ function renderNotFound() {
   `);
 }
 
-/** 매니저가 연결되지 않은 헬스장 — 보유 머신 웹페이지는 매니저 연결
- *  헬스장에서만 제공되는 기능이라, 목록을 불러오지 않고 여기서 막는다. */
-function renderNoManager() {
-  renderState(`
-    <div class="state">
-      <p class="state-title">아직 준비 중인 헬스장이에요</p>
-      <p class="state-sub">매니저가 연결되면 보유 머신 페이지를 이용할 수 있어요.</p>
-    </div>
-  `);
-}
-
 function renderError() {
   renderState(`
     <div class="state">
@@ -284,10 +274,12 @@ function renderGym(gym, machines) {
         <h1>${gym.name}</h1>
         <p class="gym-location">${gym.location ?? ''}</p>
       </header>
+      <div id="ounwan-mount"></div>
       <div class="state">
         <p class="state-title">아직 등록된 머신이 없어요</p>
       </div>
     `);
+    mountOunwanSection(root.querySelector('#ounwan-mount'), gym.id);
     return;
   }
 
@@ -326,6 +318,7 @@ function renderGym(gym, machines) {
       </div>
       <p class="gym-disclaimer">* 실시간 정보가 아니며, 현장의 실제 보유 머신 현황과 다를 수 있어요.</p>
     </header>
+    <div id="ounwan-mount"></div>
     ${muscleFilterRowHtml(availableKeys)}
     ${sections}
     <footer class="page-footer">
@@ -333,6 +326,9 @@ function renderGym(gym, machines) {
     </footer>
     <div class="list-scroll-sentinel" aria-hidden="true"></div>
   `);
+
+  // 2026-10-21: 이 헬스장의 공개 오운완 (앱 '다른 사람들은 이렇게 운동해요'와 동일)
+  mountOunwanSection(root.querySelector('#ounwan-mount'), gym.id);
 
   // 머신 목록을 끝까지 스크롤해서 다 확인한 시점에 앱 다운로드 유도 오버레이 표시.
   // 목록 콘텐츠 자체는 항상 그대로 완전히 공개된 상태 — 이 오버레이는 콘텐츠를
@@ -360,13 +356,11 @@ async function main() {
   renderLoading();
 
   try {
+    // 2026-10-26: 매니저 연결 여부와 무관하게 모든 헬스장에서 보유 머신
+    // 웹페이지를 제공한다 (이전엔 manager_id 없으면 renderNoManager()로 막았음).
     const gym = await fetchGym(gymId);
     if (!gym) {
       renderNotFound();
-      return;
-    }
-    if (!gym.manager_id) {
-      renderNoManager();
       return;
     }
 

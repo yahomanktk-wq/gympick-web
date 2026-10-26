@@ -16,11 +16,10 @@ async function restGet(path) {
 }
 
 /** 헬스장 기본 정보 조회. 없으면 null.
- *  manager_id도 함께 조회 — 매니저가 연결되지 않은 헬스장은 보유 머신
- *  웹페이지를 제공하지 않기 위해 app.js에서 이 값으로 게이트한다. */
+ *  2026-10-26: manager_id 게이트 제거 — 더 이상 조회하지 않음. */
 export async function fetchGym(gymId) {
   const rows = await restGet(
-    `gyms?id=eq.${encodeURIComponent(gymId)}&select=id,name,location,manager_id`
+    `gyms?id=eq.${encodeURIComponent(gymId)}&select=id,name,location`
   );
   return rows[0] ?? null;
 }
