@@ -7,7 +7,6 @@ import { storeCtaHtml } from './store.js';
 import { openMachineAppModal } from './modal.js';
 import { renderMachineDetailHtml, LOCK_MESSAGES } from './detail.js';
 import { renderBrandLockedHtml } from './brandScreen.js';
-import { watchScrollToEnd, showScrollLockOverlay, hideScrollLockOverlay } from './scrollLock.js';
 import { mountOunwanSection } from './ounwan.js';
 
 const root = document.getElementById('root');
@@ -25,16 +24,6 @@ let currentGym = null;
 let currentMachines = [];
 let currentMachineById = new Map();
 let currentDetailMachine = null;
-let stopListScrollWatch = null;
-
-/** 목록 화면을 벗어날 때(상세/브랜드 화면 진입) 스크롤 최하단 잠금(관찰자/오버레이) 정리 */
-function teardownListScrollLock() {
-  if (stopListScrollWatch) {
-    stopListScrollWatch();
-    stopListScrollWatch = null;
-  }
-  hideScrollLockOverlay();
-}
 
 function getRouteFromHash() {
   const hash = window.location.hash;
@@ -67,7 +56,6 @@ function renderDetailView(machineId) {
     goToList();
     return;
   }
-  teardownListScrollLock();
   currentDetailMachine = machine;
   renderState(renderMachineDetailHtml(machine));
   window.scrollTo(0, 0);
@@ -75,7 +63,6 @@ function renderDetailView(machineId) {
 
 function renderBrandView(brand) {
   currentDetailMachine = null;
-  teardownListScrollLock();
   renderState(renderBrandLockedHtml(brand));
   window.scrollTo(0, 0);
 }
@@ -265,7 +252,6 @@ function renderGym(gym, machines) {
   currentGym = gym;
   currentMachines = machines;
   currentMachineById = new Map(machines.map((m) => [String(m.id), m]));
-  teardownListScrollLock();
 
   if (machines.length === 0) {
     renderState(`
@@ -324,26 +310,10 @@ function renderGym(gym, machines) {
     <footer class="page-footer">
       <p>이 페이지는 GymPick 앱의 헬스장 보유 머신 정보를 보여줍니다.</p>
     </footer>
-    <div class="list-scroll-sentinel" aria-hidden="true"></div>
   `);
 
   // 2026-10-21: 이 헬스장의 공개 오운완 (앱 '다른 사람들은 이렇게 운동해요'와 동일)
   mountOunwanSection(root.querySelector('#ounwan-mount'), gym.id);
-
-  // 머신 목록을 끝까지 스크롤해서 다 확인한 시점에 앱 다운로드 유도 오버레이 표시.
-  // 목록 콘텐츠 자체는 항상 그대로 완전히 공개된 상태 — 이 오버레이는 콘텐츠를
-  // 가리는 게 아니라, 페이지 끝에 도달했을 때 한 번 더 유도하는 용도.
-  // 머신 수가 적어 페이지가 한 화면에 다 들어오는 경우(스크롤 자체가 필요 없는
-  // 경우)에는 진입하자마자 곧바로 잠기는 걸 막기 위해 스크롤이 실제로 가능할
-  // 때만 관찰을 등록한다.
-  const sentinel = root.querySelector('.list-scroll-sentinel');
-  const isScrollable = document.documentElement.scrollHeight > window.innerHeight + 40;
-  if (!isScrollable) return;
-  stopListScrollWatch = watchScrollToEnd(sentinel, () => {
-    showScrollLockOverlay(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
 }
 
 async function main() {
