@@ -2,9 +2,10 @@
 // 실제 헬스장 이름이 뜨도록, 정적 index.html을 그대로 서빙하지 않고
 // 이 서버리스 함수를 거쳐 메타 태그만 헬스장별로 바꿔서 내려준다.
 //
-// vercel.json의 rewrite로 /gym/:gymId 요청이 이 함수로 들어온다.
-// 클라이언트 쪽 동작(app.js가 window.location.pathname을 읽어 데이터를
-// 불러오는 것)은 그대로이므로, 화면 자체는 index.html과 동일하게 렌더링된다.
+// vercel.json의 rewrite로 /gym/:gymId, /g/:code(짧은 코드), /:slug(영문 이름)
+// 요청이 이 함수로 들어온다. 주소창은 짧은 주소 그대로 두고, 찾은 헬스장 id를
+// <meta name="gympick:gym-id">로 넣어주면 app.js가 그 id로 화면을 그린다.
+// (/gym/:gymId는 meta가 없어도 app.js가 pathname에서 id를 읽는다.)
 
 const SUPABASE_URL = 'https://okrouzqqvfioodfieljv.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_f3GrrwmhqQFyuI_1wQV6zw_Q6kF27qI';
@@ -17,11 +18,15 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-async function fetchGymName(gymId) {
-  if (!gymId) return null;
+const CODE_RE = /^[23456789abcdefghjkmnpqrstuvwxyz]{6}$/;
+const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+
+// column: 'id' | 'short_code' | 'slug'. 없으면 null, 있으면 { id, name }.
+async function fetchGym(column, value) {
+  if (!value) return null;
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/gyms?id=eq.${encodeURIComponent(gymId)}&select=name`,
+      `${SUPABASE_URL}/rest/v1/gyms?${column}=eq.${encodeURIComponent(value)}&select=id,name`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -31,7 +36,7 @@ async function fetchGymName(gymId) {
     );
     if (!res.ok) return null;
     const rows = await res.json();
-    return rows?.[0]?.name ?? null;
+    return rows?.[0] ?? null;
   } catch (e) {
     return null;
   }
@@ -59,14 +64,33 @@ const FALLBACK_HTML = `<!doctype html>
 
 module.exports = async (req, res) => {
   const gymId = (req.query.gymId || '').toString();
+  const code = (req.query.code || '').toString();
+  const slug = (req.query.slug || '').toString();
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers.host;
 
-  const gymName = await fetchGymName(gymId);
+  // 요청된 주소 형태에 맞춰 조회 컬럼과 og:url 경로를 정한다.
+  let gym = null;
+  let pagePath;
+  if (gymId) {
+    gym = await fetchGym('id', gymId);
+    pagePath = `/gym/${encodeURIComponent(gymId)}`;
+  } else if (code) {
+    if (CODE_RE.test(code)) gym = await fetchGym('short_code', code);
+    pagePath = `/g/${encodeURIComponent(code)}`;
+  } else {
+    if (SLUG_RE.test(slug)) gym = await fetchGym('slug', slug);
+    pagePath = `/${encodeURIComponent(slug)}`;
+  }
+
+  const gymName = gym?.name ?? null;
   const title = gymName ? `[${gymName}] 보유머신 확인하기` : '[GymPick] 보유머신 확인하기';
   const description = "'짐픽'을 통해 보유머신을 확인하세요.";
   const ogImage = `${proto}://${host}/og-image.png`;
-  const pageUrl = `${proto}://${host}/gym/${encodeURIComponent(gymId)}`;
+  const pageUrl = `${proto}://${host}${pagePath}`;
+  const gymIdMeta = gym?.id
+    ? `<meta name="gympick:gym-id" content="${escapeHtml(gym.id)}" />`
+    : '';
 
   let html;
   try {
@@ -93,12 +117,13 @@ module.exports = async (req, res) => {
       )
       .replace(
         '</head>',
-        `<meta property="og:url" content="${escapeHtml(pageUrl)}" /></head>`
+        `<meta property="og:url" content="${escapeHtml(pageUrl)}" />${gymIdMeta}</head>`
       );
   } catch (e) {
     html = FALLBACK_HTML.replace(/__TITLE__/g, escapeHtml(title))
       .replace(/__DESCRIPTION__/g, escapeHtml(description))
-      .replace(/__OG_IMAGE__/g, escapeHtml(ogImage));
+      .replace(/__OG_IMAGE__/g, escapeHtml(ogImage))
+      .replace('</head>', `${gymIdMeta}</head>`);
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

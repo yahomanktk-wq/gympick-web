@@ -127,6 +127,9 @@ root.addEventListener('keydown', (e) => {
 window.addEventListener('hashchange', renderRoute);
 
 function getGymIdFromPath() {
+  // 짧은 주소(/g/:code, /:slug)는 api/gym.js가 찾은 id를 meta로 넣어준다.
+  const injected = document.querySelector('meta[name="gympick:gym-id"]')?.content;
+  if (injected) return injected;
   // 기대 경로: /gym/:gymId
   const match = window.location.pathname.match(/\/gym\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : null;

@@ -10,6 +10,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/gym/:gymId", "destination": "/api/gym?gymId=:gymId" }
+    { "source": "/gym/:gymId", "destination": "/api/gym?gymId=:gymId" },
+    { "source": "/g/:code([23456789a-hj-km-np-z]{6})", "destination": "/api/gym?code=:code" },
+    { "source": "/:slug([a-z0-9][a-z0-9-]{1,28}[a-z0-9])", "destination": "/api/gym?slug=:slug" }
   ]
 }
