@@ -19,7 +19,7 @@ function escapeHtml(str) {
 }
 
 const CODE_RE = /^[23456789abcdefghjkmnpqrstuvwxyz]{6}$/;
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
+const SLUG_RE = /^[a-z0-9][a-z0-9_]{1,28}[a-z0-9]$/;
 
 // column: 'id' | 'short_code' | 'slug'. 없으면 null, 있으면 { id, name }.
 async function fetchGym(column, value) {
