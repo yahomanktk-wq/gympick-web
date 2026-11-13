@@ -55,24 +55,36 @@ async function fetchRoutine(postId) {
 
 // ── 이미지 URL ─────────────────────────────────────────────────────────
 
-/** 공개 저장소 원본 URL → 리사이즈 render URL (Supabase Image Transformation) */
-function resized(url, width, height, quality = 75) {
+/**
+ * 오운완 사진 원본 URL → 미리 만들어 둔 긴 변 1024px WebP 변형 URL.
+ * Supabase Image Transformation(render)은 유료 한도를 넘어 쓰지 않는다 — 앱(photoImageUrl.ts)과 같은 규칙.
+ *   .../workout-photos/u/s_123.png → .../workout-photos/u/s_123_w1024.webp
+ * workout-photos 경로가 아니거나, 구 썸네일(_thumb.*)·이미 변형(_w1024/_w2048)이면 그대로 쓴다.
+ */
+function photoVariant(url) {
   if (!url) return '';
-  const marker = '/storage/v1/object/public/';
-  if (!url.includes(marker)) return url;
-  return (
-    url.replace(marker, '/storage/v1/render/image/public/') +
-    `${url.includes('?') ? '&' : '?'}width=${width}&height=${height}&quality=${quality}`
-  );
+  if (!url.includes('/storage/v1/object/public/workout-photos/')) return url;
+  const clean = url.split('?')[0];
+  if (/_(thumb|w1024|w2048).[a-z0-9]+$/i.test(clean)) return url;
+  const dot = clean.lastIndexOf('.');
+  if (dot <= clean.lastIndexOf('/')) return url;
+  return `${clean.slice(0, dot)}_w1024.webp`;
 }
 
-/** 머신 이미지 — 프리웨이트(fw숫자)는 애니메이션 GIF 원본, 그 외는 WebP 리사이즈 */
+/** 변형 이미지 <img> 속성 — 변형이 없으면 한 번만 원본으로 바꾼다 (onerror 해제로 무한 반복 방지) */
+function photoImgAttrs(url) {
+  const src = photoVariant(url);
+  if (!src || src === url) return `src="${esc(url || '')}"`;
+  return `src="${esc(src)}" data-orig="${esc(url)}" onerror="this.onerror=null;this.src=this.dataset.orig"`;
+}
+
+/** 머신 이미지 — 프리웨이트(fw숫자)는 애니메이션 GIF 원본, 그 외는 WebP 원본(800×800) */
 function machineImg(machineId) {
   const id = encodeURIComponent(machineId);
   if (/^fw\d+$/i.test(machineId)) {
     return `${SUPABASE_URL}/storage/v1/object/public/machine-images/${id}.gif`;
   }
-  return `${SUPABASE_URL}/storage/v1/render/image/public/machine-images/${id}.webp?width=128&height=128&quality=75`;
+  return `${SUPABASE_URL}/storage/v1/object/public/machine-images/${id}.webp`;
 }
 
 // ── 스타일 (이 섹션 전용, 한 번만 주입) ─────────────────────────────────
@@ -136,7 +148,7 @@ function tileHtml(post) {
   const src = post.thumbnail_uri || post.composite_uri || post.photo_uri;
   return `
     <button class="ow-tile" type="button" data-ow-post="${esc(post.id)}" aria-label="오운완 사진 보기">
-      <img src="${esc(resized(src, 300, 400))}" alt="" loading="lazy" />
+      <img ${photoImgAttrs(src)} alt="" loading="lazy" />
     </button>`;
 }
 
@@ -274,7 +286,7 @@ async function openPostDetail(post) {
       </div>
       <button class="ow-close" type="button" aria-label="닫기">×</button>
     </div>
-    <img class="ow-photo" src="${esc(resized(photo, 1080, 1440, 90))}" alt="오운완 사진" />
+    <img class="ow-photo" ${photoImgAttrs(photo)} alt="오운완 사진" />
     <div class="ow-body">
       <div class="ow-routine-slot"><div class="ow-loading">운동 루틴 불러오는 중…</div></div>
       <div class="ow-app-cta">${storeCtaHtml()}</div>
