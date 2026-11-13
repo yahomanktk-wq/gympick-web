@@ -56,26 +56,48 @@ async function fetchRoutine(postId) {
 // ── 이미지 URL ─────────────────────────────────────────────────────────
 
 /**
- * 오운완 사진 원본 URL → 미리 만들어 둔 긴 변 1024px WebP 변형 URL.
+ * 오운완 사진 원본 URL → 미리 만들어 둔 WebP 변형 URL.
  * Supabase Image Transformation(render)은 유료 한도를 넘어 쓰지 않는다 — 앱(photoImageUrl.ts)과 같은 규칙.
- *   .../workout-photos/u/s_123.png → .../workout-photos/u/s_123_w1024.webp
+ *   .../workout-photos/u/s_123.png → .../workout-photos/u/s_123_w1024.webp (그리드) / _w2048.webp (상세)
  * workout-photos 경로가 아니거나, 구 썸네일(_thumb.*)·이미 변형(_w1024/_w2048)이면 그대로 쓴다.
  */
-function photoVariant(url) {
+function photoVariant(url, tier = 'w1024') {
   if (!url) return '';
   if (!url.includes('/storage/v1/object/public/workout-photos/')) return url;
   const clean = url.split('?')[0];
-  if (/_(thumb|w1024|w2048).[a-z0-9]+$/i.test(clean)) return url;
+  if (/_(thumb|w1024|w2048)\.[a-z0-9]+$/i.test(clean)) return url;
   const dot = clean.lastIndexOf('.');
   if (dot <= clean.lastIndexOf('/')) return url;
-  return `${clean.slice(0, dot)}_w1024.webp`;
+  return `${clean.slice(0, dot)}_${tier}.webp`;
 }
 
-/** 변형 이미지 <img> 속성 — 변형이 없으면 한 번만 원본으로 바꾼다 (onerror 해제로 무한 반복 방지) */
-function photoImgAttrs(url) {
-  const src = photoVariant(url);
-  if (!src || src === url) return `src="${esc(url || '')}"`;
-  return `src="${esc(src)}" data-orig="${esc(url)}" onerror="this.onerror=null;this.src=this.dataset.orig"`;
+/** 그리드 타일 후보: 원본의 _w1024 → thumbnail_uri → 원본 (원본이 없으면 thumbnail_uri만) */
+function tileSources(post) {
+  const orig = post.composite_uri || post.photo_uri;
+  if (!orig) return [post.thumbnail_uri];
+  return [photoVariant(orig, 'w1024'), post.thumbnail_uri, orig];
+}
+
+/** 상세 사진 후보: 원본의 _w2048 → 원본 */
+function detailSources(post) {
+  const orig = post.composite_uri || post.photo_uri;
+  return [photoVariant(orig, 'w2048'), orig];
+}
+
+/**
+ * 후보 URL 목록 → <img> 속성. 첫 URL을 src로 쓰고, 로드 실패 시 남은 후보를 하나씩 시도한다.
+ * 각 후보는 한 번만 쓰이고, 다 떨어지면 onerror를 해제해 무한 반복을 막는다.
+ */
+function photoImgAttrs(candidates) {
+  const list = [...new Set(candidates.filter(Boolean))];
+  if (list.length === 0) return 'src=""';
+  const [src, ...rest] = list;
+  if (rest.length === 0) return `src="${esc(src)}"`;
+  return (
+    `src="${esc(src)}" data-fb="${esc(JSON.stringify(rest))}" ` +
+    `onerror="var l=JSON.parse(this.dataset.fb||'[]');if(!l.length){this.onerror=null;return;}` +
+    `this.src=l.shift();this.dataset.fb=JSON.stringify(l);"`
+  );
 }
 
 /** 머신 이미지 — 프리웨이트(fw숫자)는 애니메이션 GIF 원본, 그 외는 WebP 원본(800×800) */
@@ -145,10 +167,9 @@ function injectCss() {
 // ── 렌더 ────────────────────────────────────────────────────────────────
 
 function tileHtml(post) {
-  const src = post.thumbnail_uri || post.composite_uri || post.photo_uri;
   return `
     <button class="ow-tile" type="button" data-ow-post="${esc(post.id)}" aria-label="오운완 사진 보기">
-      <img ${photoImgAttrs(src)} alt="" loading="lazy" />
+      <img ${photoImgAttrs(tileSources(post))} alt="" loading="lazy" />
     </button>`;
 }
 
@@ -277,7 +298,6 @@ function openShell(innerHtml) {
 }
 
 async function openPostDetail(post) {
-  const photo = post.composite_uri || post.photo_uri;
   openShell(`
     <div class="ow-modal-head">
       <div>
@@ -286,7 +306,7 @@ async function openPostDetail(post) {
       </div>
       <button class="ow-close" type="button" aria-label="닫기">×</button>
     </div>
-    <img class="ow-photo" ${photoImgAttrs(photo)} alt="오운완 사진" />
+    <img class="ow-photo" ${photoImgAttrs(detailSources(post))} alt="오운완 사진" />
     <div class="ow-body">
       <div class="ow-routine-slot"><div class="ow-loading">운동 루틴 불러오는 중…</div></div>
       <div class="ow-app-cta">${storeCtaHtml()}</div>
