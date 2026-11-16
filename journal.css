@@ -163,3 +163,168 @@
 .jn-footer {
   margin-top: 24px;
 }
+
+/* ══ 2026-11-16: 앱과 같은 어두운 테마 ══════════════════════════════════
+   journal.css는 /u/:code 페이지에서만 불러오므로, 여기서 공용 변수(styles.css)를
+   다시 정의해도 헬스장 페이지에는 영향이 없다. ounwan.js가 주입하는 상세 보기
+   스타일(.ow-*)은 뒤에 붙으므로 `body .ow-*`로 우선순위를 높여 덮어쓴다. */
+
+:root {
+  --ink: #ffffff;
+  --ink-sub: #7a7a8c;
+  --line: #252530;
+  --lime: #c8ff57;
+  --bg: #0a0a0c;
+  --jn-surface: #131316;
+  --jn-surface-high: #1c1c22;
+  --jn-dim: #3a3a4a;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a0c;
+  color: #ffffff;
+}
+
+/* 상단 로고: 검은 로고 → 흰색 */
+.jn-logo .wordmark-logo path {
+  fill: #ffffff;
+}
+
+.jn-nick,
+.jn-week-head,
+.jn-week-no {
+  color: #ffffff;
+}
+
+.jn-sub,
+.jn-week-range {
+  color: #7a7a8c;
+}
+
+.jn-avatar {
+  background: var(--jn-surface-high);
+  color: #7a7a8c;
+}
+
+.jn-state-icon {
+  color: #ffffff;
+}
+
+/* 날짜 칸 */
+.jn-cell {
+  background: var(--jn-surface);
+  color: var(--jn-dim);
+}
+
+.jn-cell--photo {
+  background: var(--jn-surface-high);
+}
+
+.jn-cell--today {
+  border-color: #c8ff57;
+}
+
+/* 하단 앱 설치 영역 — 흰 그라데이션 대신 화면 배경 + 위 경계선 */
+#store-cta-bar {
+  background: #0a0a0c;
+  border-top: 1px solid #252530;
+}
+
+/* 설치 버튼: 어두운 배경에서도 보이도록 한 단계 밝은 면 + 테두리, 글자 흰색 (로고는 라임 그대로) */
+.store-cta {
+  background: var(--jn-surface-high);
+  color: #ffffff;
+  border: 1px solid #252530;
+}
+
+/* ── 사진 상세 보기 (ounwan.js 모달) ─────────────────────── */
+
+body .ow-modal {
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 넓은 화면에서는 가운데 480px만 창으로, 양옆은 어두운 막 */
+body .ow-modal > * {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  background: var(--jn-surface);
+}
+
+body .ow-modal > .ow-body {
+  flex: 1 0 auto;
+}
+
+body .ow-modal-head {
+  background: var(--jn-surface);
+  border-bottom-color: #252530;
+}
+
+body .ow-nick,
+body .ow-routine-title,
+body .ow-stat-val,
+body .ow-card-gym,
+body .ow-row-name,
+body .ow-card-foot {
+  color: #ffffff;
+}
+
+body .ow-gym,
+body .ow-close,
+body .ow-stat-lab,
+body .ow-card-date,
+body .ow-row-brand,
+body .ow-loading {
+  color: #7a7a8c;
+}
+
+body .ow-row-set {
+  color: #ffffff;
+}
+
+body .ow-gym-link {
+  color: #c8ff57;
+}
+
+body .ow-photo {
+  background: var(--jn-surface-high);
+}
+
+body .ow-stats {
+  background: var(--jn-surface-high);
+}
+
+body .ow-stat + .ow-stat {
+  border-left-color: #252530;
+}
+
+body .ow-chip {
+  background: #c8ff57;
+  color: #0a0a0c;
+}
+
+/* 루틴 카드 — 오운완 글자색(인라인 border/badge 색)은 어두운 배경에서 안 보일 수 있어 앱 색으로 고정 */
+body .ow-card {
+  background: var(--jn-surface-high);
+  border-color: #252530 !important;
+}
+
+body .ow-card-badge {
+  background: #c8ff57 !important;
+  color: #0a0a0c;
+}
+
+body .ow-divider {
+  background: #252530;
+}
+
+/* 머신 사진은 흰 배경 이미지라 칸만 둥글게 두고 테두리만 어둡게 */
+body .ow-row-img {
+  border-color: #252530;
+}

@@ -64,6 +64,8 @@ const FALLBACK_HTML = `<!doctype html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0c" />
+    <meta name="color-scheme" content="dark" />
     <title>__TITLE__</title>
     <meta name="description" content="__DESCRIPTION__" />
     <meta property="og:title" content="__TITLE__" />
