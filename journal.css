@@ -1,0 +1,165 @@
+/* 유저 운동일지 공유 페이지(/u/:code) 전용 스타일 — 공통 톤은 styles.css */
+
+.jn-logo .wordmark-logo {
+  margin: 0 0 18px;
+}
+
+.jn-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+.jn-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.jn-avatar {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f0f0f0;
+  color: #b5b5b5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jn-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.jn-avatar svg {
+  display: none;
+  width: 32px;
+  height: 32px;
+}
+
+.jn-avatar--empty svg {
+  display: block;
+}
+
+.jn-profile-text {
+  min-width: 0;
+}
+
+.jn-nick {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jn-sub {
+  font-size: 12px;
+  color: var(--ink-sub);
+  margin: 0;
+}
+
+.jn-state-icon {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 12px;
+  color: var(--ink);
+}
+
+.jn-state-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 주별 줄 ───────────────────────────────────────── */
+
+.jn-week {
+  margin-bottom: 18px;
+}
+
+.jn-week-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.jn-week-range {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-sub);
+}
+
+/* 한 화면에 약 3.5칸: (전체 폭 - 간격 3칸) / 3.5 */
+.jn-row {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.jn-row::-webkit-scrollbar {
+  display: none;
+}
+
+.jn-cell {
+  flex: 0 0 calc((100% - 9px) / 3.5);
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f4f4f4;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #b0b0b0;
+  padding: 0;
+  font: inherit;
+}
+
+.jn-cell--photo {
+  cursor: pointer;
+  background: #eee;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jn-cell--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.jn-cell-num {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.jn-cell-wd {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.jn-cell--today {
+  border-color: var(--lime);
+}
+
+.jn-cell--future {
+  opacity: 0.4;
+}
+
+.jn-footer {
+  margin-top: 24px;
+}

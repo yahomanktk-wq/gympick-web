@@ -15,7 +15,7 @@ const HEADERS = {
   Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
 };
 
-function esc(str) {
+export function esc(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -61,7 +61,7 @@ async function fetchRoutine(postId) {
  *   .../workout-photos/u/s_123.png → .../workout-photos/u/s_123_w1024.webp (그리드) / _w2048.webp (상세)
  * workout-photos 경로가 아니거나, 구 썸네일(_thumb.*)·이미 변형(_w1024/_w2048)이면 그대로 쓴다.
  */
-function photoVariant(url, tier = 'w1024') {
+export function photoVariant(url, tier = 'w1024') {
   if (!url) return '';
   if (!url.includes('/storage/v1/object/public/workout-photos/')) return url;
   const clean = url.split('?')[0];
@@ -72,14 +72,14 @@ function photoVariant(url, tier = 'w1024') {
 }
 
 /** 그리드 타일 후보: 원본의 _w1024 → thumbnail_uri → 원본 (원본이 없으면 thumbnail_uri만) */
-function tileSources(post) {
+export function tileSources(post) {
   const orig = post.composite_uri || post.photo_uri;
   if (!orig) return [post.thumbnail_uri];
   return [photoVariant(orig, 'w1024'), post.thumbnail_uri, orig];
 }
 
 /** 상세 사진 후보: 원본의 _w2048 → 원본 */
-function detailSources(post) {
+export function detailSources(post) {
   const orig = post.composite_uri || post.photo_uri;
   return [photoVariant(orig, 'w2048'), orig];
 }
@@ -88,7 +88,7 @@ function detailSources(post) {
  * 후보 URL 목록 → <img> 속성. 첫 URL을 src로 쓰고, 로드 실패 시 남은 후보를 하나씩 시도한다.
  * 각 후보는 한 번만 쓰이고, 다 떨어지면 onerror를 해제해 무한 반복을 막는다.
  */
-function photoImgAttrs(candidates) {
+export function photoImgAttrs(candidates) {
   const list = [...new Set(candidates.filter(Boolean))];
   if (list.length === 0) return 'src=""';
   const [src, ...rest] = list;
@@ -123,6 +123,7 @@ const CSS = `
 .ow-modal-head { position:sticky; top:0; z-index:1; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid #eee; }
 .ow-nick { font-size:15px; font-weight:800; color:#111; margin:0 0 4px; }
 .ow-gym { font-size:12px; font-weight:600; color:#777; margin:0; }
+.ow-gym-link { display:inline-block; text-decoration:none; }
 .ow-close { background:none; border:0; font-size:26px; line-height:1; color:#777; cursor:pointer; padding:4px 6px; }
 .ow-photo { width:100%; aspect-ratio:3 / 4; object-fit:cover; display:block; background:#eee; }
 .ow-body { padding:16px 16px 120px; }
@@ -156,7 +157,7 @@ const CSS = `
 .ow-app-cta { margin-top:20px; }
 `;
 
-function injectCss() {
+export function injectCss() {
   if (document.getElementById('ow-style')) return;
   const style = document.createElement('style');
   style.id = 'ow-style';
@@ -297,12 +298,21 @@ function openShell(innerHtml) {
   document.addEventListener('keydown', onKeydown);
 }
 
-async function openPostDetail(post) {
+/**
+ * 오운완 상세(사진 + 운동 루틴) 모달.
+ * options.gymLink: true면 헬스장 이름을 /gym/{gym_id} 링크로 표시 (유저 운동일지 페이지에서 사용).
+ */
+export async function openPostDetail(post, options = {}) {
+  const gymText = esc(post.gym_name);
+  const gymHtml =
+    options.gymLink && post.gym_id && post.gym_name
+      ? `<a class="ow-gym ow-gym-link" href="/gym/${encodeURIComponent(post.gym_id)}">${gymText} ›</a>`
+      : `<p class="ow-gym">${gymText}</p>`;
   openShell(`
     <div class="ow-modal-head">
       <div>
         <p class="ow-nick">${esc(post.nickname)}</p>
-        <p class="ow-gym">${esc(post.gym_name)}</p>
+        ${gymHtml}
       </div>
       <button class="ow-close" type="button" aria-label="닫기">×</button>
     </div>
